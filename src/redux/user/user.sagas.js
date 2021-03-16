@@ -11,6 +11,7 @@ import {
   signInSuccess,
   signOutFailure,
   signOutSuccess,
+  signUpSuccess,
 } from "./user.actions";
 
 import { UserActionTypes } from "./user.types";
@@ -91,7 +92,32 @@ const onUserSignOut = function* () {
   yield takeLatest(UserActionTypes.SIGN_OUT_START, onUserSignOutProccess);
 };
 
+// on sign up success
+
+const signInAfterSignUp = function* ({ payload: { user, additionalData } }) {
+  yield getSnapshotFromUserAuth(user, additionalData);
+};
+
+const onSignUpSuccess = function* () {
+  yield takeLatest(UserActionTypes.SIGN_UP_SUCCESS, signInAfterSignUp);
+};
+
 // user sign up email and password
+
+const userSignUpProccess = function* ({
+  payload: { displayName, password, email },
+}) {
+  try {
+    const { user } = yield auth.createUserWithEmailAndPassword(email, password);
+    yield put(signUpSuccess({ user, additionalData: { displayName } }));
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const onUserSignUp = function* () {
+  yield takeLatest(UserActionTypes.SIGN_UP_START, userSignUpProccess);
+};
 
 // root user sagas
 const userSagas = function* () {
@@ -100,6 +126,8 @@ const userSagas = function* () {
     call(onEmailAndPasswordSignInStart),
     call(onCheckUserSession),
     call(onUserSignOut),
+    call(onUserSignUp),
+    call(onSignUpSuccess),
   ]);
 };
 
